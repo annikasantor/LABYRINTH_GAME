@@ -30,6 +30,9 @@ public class FPSInput : MonoBehaviour
     [SerializeField] private float boostLength = 10.0f;
     [SerializeField] private float boostStrength = 10.0f;
     
+    private AudioSource _audioSource;
+    [SerializeField] private AudioClip _powerUp;
+    
     void Start()
     {
         _controller = GetComponent<CharacterController>();
@@ -37,6 +40,8 @@ public class FPSInput : MonoBehaviour
         boostCountdown = boostLength;
         
         boostText.enabled = false;
+        
+        _audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
@@ -93,7 +98,7 @@ public class FPSInput : MonoBehaviour
             
             boostText.enabled = true;
             int seconds = Mathf.FloorToInt(boostCountdown % 60);
-            boostText.text = string.Format("Speed Boost! "
+            boostText.text = string.Format("Speed Boost: "
             +"{0:00}", seconds);
             
             if (boostTimer >= boostLength)
@@ -101,6 +106,7 @@ public class FPSInput : MonoBehaviour
                 _speed = 10.0f;
                 boosting = false;
                 boostTimer = 0;
+                boostCountdown = boostLength;
                 boostText.enabled = false;
             }
         }
@@ -110,6 +116,7 @@ public class FPSInput : MonoBehaviour
     {
         if (other.CompareTag("PowerUp"))
         {
+            _audioSource.PlayOneShot(_powerUp);
             boosting = true;
             _speed = boostStrength;
             Destroy(other.gameObject);

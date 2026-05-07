@@ -1,10 +1,22 @@
+using System;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.AI;
 
+[RequireComponent(typeof(AudioSource))]
 public class ReactiveTarget : MonoBehaviour
 {
 
     [SerializeField] private float _defeatAnimTime = 1.5f;
+
+    private AudioSource _audioSource;
+    [SerializeField] private AudioClip _enemyDefeat;
+
+
+    private void Start()
+    {
+        _audioSource = GetComponent<AudioSource>();
+    }
 
     public void ReactToHit()
     {
@@ -12,7 +24,8 @@ public class ReactiveTarget : MonoBehaviour
 
         if (nav != null)
             nav.IsAlive = false;
-
+        _audioSource.PlayOneShot(_enemyDefeat);
+        
         StartCoroutine(DefeatAnim());
     }
 
