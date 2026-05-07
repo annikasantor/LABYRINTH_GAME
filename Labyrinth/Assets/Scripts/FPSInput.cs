@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using TMPro;
 
 [RequireComponent(typeof(CharacterController))]
 //automatically creates a component when you add the script
@@ -9,7 +11,7 @@ public class FPSInput : MonoBehaviour
 {
     [Header("Movement Attributes")]
     
-    [SerializeField, Range(1.0f,10.0f)] float _speed = 5.0f;
+    [SerializeField, Range(1.0f,20.0f)] float _speed = 10.0f;
     [SerializeField, Range(2.0f, 5.0f)] private float _runBoost = 3.0f;
     
     [SerializeField] private float _gravity = -9.81f;
@@ -18,25 +20,27 @@ public class FPSInput : MonoBehaviour
     [SerializeField, Range(5.0f, 20.0f)] private float _jumpVelocity = 15.0f;
     
     CharacterController _controller;
+
+    private float boostTimer = 0;
+    private bool boosting = false;
+    private float boostCountdown;
+    
+    [SerializeField] TextMeshProUGUI boostText;
+    
+    [SerializeField] private float boostLength = 10.0f;
+    [SerializeField] private float boostStrength = 10.0f;
+    
     void Start()
     {
         _controller = GetComponent<CharacterController>();
         
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        boostCountdown = boostLength;
+        
+        boostText.enabled = false;
     }
-    
-    
 
     void Update()
     {
-        //transform.Translate(
-        //    Input.GetAxis("Horizontal") * _speed * Time.deltaTime,
-        //    0,
-        //    Input.GetAxis("Vertical") * _speed * Time.deltaTime
-        //    );
-        // Doesn't interact with the physics engine (so you can go through walls ect. ((no collision))
-
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             _speed += _runBoost;
@@ -80,7 +84,36 @@ public class FPSInput : MonoBehaviour
         //apply movement using the character controller componenet
         //CharacterController expects cooridinates in world scpae
         _controller.Move(movement);
+
+        if (boosting)
+        {
+            boostTimer += Time.deltaTime;
+            
+            boostCountdown -= Time.deltaTime;
+            
+            boostText.enabled = true;
+            int seconds = Mathf.FloorToInt(boostCountdown % 60);
+            boostText.text = string.Format("Speed Boost! "
+            +"{0:00}", seconds);
+            
+            if (boostTimer >= boostLength)
+            {
+                _speed = 10.0f;
+                boosting = false;
+                boostTimer = 0;
+                boostText.enabled = false;
+            }
+        }
     }
-    
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("PowerUp"))
+        {
+            boosting = true;
+            _speed = boostStrength;
+            Destroy(other.gameObject);
+        }
+    }
 }
 

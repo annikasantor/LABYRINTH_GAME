@@ -5,10 +5,12 @@ using TMPro;
 public class Timer : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI timeText;
-    //private float score;
+    
     float elapsedTime;
 
     private bool isRunning = false;
+
+    public float score;
 
     private void Awake()
     {
@@ -31,8 +33,18 @@ public class Timer : MonoBehaviour
             int minutes = Mathf.FloorToInt(elapsedTime / 60);
             int seconds = Mathf.FloorToInt(elapsedTime % 60);
             timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            
         }
 
-        //score = elapsedTime;
+        if (!isRunning)
+        {
+            score = Mathf.FloorToInt(elapsedTime / 60);
+            UpdateScore();
+        }
+    }
+
+    private void UpdateScore()
+    {
+        GameManager.score += score;
     }
 }
