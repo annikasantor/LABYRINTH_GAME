@@ -6,15 +6,17 @@ TagManager:
   tags:
   - Undefined
   - Projectile
+  - Ground
+  - Wall
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - whatIsGround
   - Water
   - UI
-  - Obstacle
-  - 
+  - whatIsPlayer
+  - Wall
   - 
   - 
   - 

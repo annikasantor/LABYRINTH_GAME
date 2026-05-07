@@ -1,197 +1,129 @@
+using System;
 using UnityEngine;
+using UnityEngine.AI;
+using Random = UnityEngine.Random;
 
 public class EnemyAI : MonoBehaviour
 {
-    public enum State { Patrol, Chase, Attack }
-    public State currentState = State.Patrol;
+    public NavMeshAgent agent;
 
-    [Header("References")]
-    public Transform[] patrolPoints;
     public Transform player;
+    
+    public float health;
 
-    [Header("Settings")]
-    public float patrolSpeed = 2f;
-    public float chaseSpeed = 4f;
-    public float attackDistance = 1.5f;
-    public float attackCooldown = 1f;
+    public LayerMask whatIsGround;
+    public LayerMask whatIsPlayer;
 
+    //Patrolling
+    public Vector3 walkPoint;
+    private bool walkPointSet;
+    public float walkPointRange;
 
-    [Header("Detection Settings")]
-    public float chaseDistance = 8f;
-    public float viewDistance = 10f;
-    [Range(0, 360)]
-    public float viewAngle = 90f;
-    public LayerMask obstacleMask;
+    //Attacking
+    public float timeBetweenAttacks;
+    bool alreadyAttacked;
+    public GameObject projectile;
+    
+    //States
+    public float sightRange;
+    public float attackRange;
+    public bool playerInSightRange;
+    public bool playerInAttackRange;
 
-
-    [Header("State Materials")]
-    public Material patrolMaterial;
-    public Material chaseMaterial;
-    public Material attackMaterial;
-
-    private Renderer rend;
-    private int patrolIndex = 0;
-    private float attackTimer = 0f;
-
-    void Start()
+    private void Awake()
     {
-        rend = GetComponent<Renderer>();
-        rend.material = patrolMaterial;
+        player = GameObject.Find("Player").transform;
+        agent = GetComponent<NavMeshAgent>();
     }
 
-    void Update()
+    private void Update()
     {
-        switch (currentState)
-        {
-            case State.Patrol:
-                Patrol();
-                break;
+        //Check for ssight and attack range
+        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
-            case State.Chase:
-                Chase();
-                break;
-
-            case State.Attack:
-                Attack();
-                break;
-        }
-
-        attackTimer -= Time.deltaTime;
+        if (!playerInSightRange && !playerInAttackRange) Patrolling();
+        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+        if (playerInSightRange && playerInAttackRange) AttackPlayer();
     }
 
-    // -------- PATROL -------- //
-    void Patrol()
+    private void Patrolling()
     {
-        rend.material = patrolMaterial;
+        if (!walkPointSet) SearchWalkPoint();
 
-        Transform point = patrolPoints[patrolIndex];
-        MoveTowards(point.position, patrolSpeed);
-
-        if (Vector3.Distance(transform.position, point.position) < 0.3f)
-            patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
-
-        if (ShouldStartChasing())
-            currentState = State.Chase;
+        if (walkPointSet)
+        {
+            agent.SetDestination(walkPoint);
+        }
+        
+        Vector3 distanceToWalkPoint = transform.position - walkPoint;
+        
+        //Walkpoint reached
+        if (distanceToWalkPoint.magnitude < 1f)
+        {
+            walkPointSet = false;
+        }
     }
 
-    // -------- CHASE -------- //
-    void Chase()
+    private void SearchWalkPoint()
     {
-        rend.material = chaseMaterial;
+        float randomZ = Random.Range(-walkPointRange, walkPointRange);
+        float randomX = Random.Range(-walkPointRange, walkPointRange);
+        
+        walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z);
 
-        // Lost both detection methods, go back to patrol
-        if (!PlayerInChaseRange() && !PlayerInViewRange())
+        if (Physics.Raycast(walkPoint, -transform.up, 2f, whatIsGround))
         {
-            currentState = State.Patrol;
-            return;
+            walkPointSet = true;
         }
-
-        MoveTowards(player.position, chaseSpeed);
-
-        float dist = Vector3.Distance(transform.position, player.position);
-
-        // Attack requires visibility + proximity
-        if (dist <= attackDistance && PlayerInViewRange())
-            currentState = State.Attack;
-
     }
 
-    // -------- ATTACK -------- //
-    void Attack()
+    private void ChasePlayer()
     {
-        rend.material = attackMaterial;
+        agent.SetDestination(player.position);
+    }
 
-        // Lost all detection
-        if (!PlayerInChaseRange() && !PlayerInViewRange())
-        {
-            currentState = State.Patrol;
-            return;
-        }
-
-        if (!PlayerInViewRange())
-        {
-            currentState = State.Chase;
-            return;
-        }
-
+    private void AttackPlayer()
+    {
+        //Make sure enemy doesn't move
+        agent.SetDestination(transform.position);
+        
         transform.LookAt(player);
 
-        if (attackTimer <= 0f)
+        if (!alreadyAttacked)
         {
-            Debug.Log("Enemy attacked the player!");
-            attackTimer = attackCooldown;
+            //attack code
+            Rigidbody rb = Instantiate(projectile, transform.position, Quaternion.identity).GetComponent<Rigidbody>();
+            rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
+            rb.AddForce(transform.up * 8f, ForceMode.Impulse);
+            
+            alreadyAttacked = true;
+            Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
-
     }
 
-    // ---------------- Helpers ---------------- //
-    bool PlayerInChaseRange()
+    private void ResetAttack()
     {
-        Vector3 dirToPlayer = player.position - transform.position;
-        float distance = dirToPlayer.magnitude;
-
-        if (distance > chaseDistance)
-            return false;
-
-        // Awareness ray (short-range)
-        if (Physics.Raycast(transform.position, dirToPlayer.normalized, distance, obstacleMask))
-            return false;
-
-        return true;
+        alreadyAttacked = false;
     }
 
-    bool PlayerInViewRange()
+    public void TakeDamage(int damage)
     {
-        Vector3 dirToPlayer = player.position - transform.position;
-        float distance = dirToPlayer.magnitude;
-
-        if (distance > viewDistance)
-            return false;
-
-        dirToPlayer.Normalize();
-
-        float angle = Vector3.Angle(transform.forward, dirToPlayer);
-        if (angle > viewAngle / 2f)
-            return false;
-
-        if (Physics.Raycast(transform.position, dirToPlayer, distance, obstacleMask))
-            return false;
-
-        return true;
+        health -= damage;
+        
+        if (health <= 0) Invoke(nameof(DestroyEnemy), 0.5f);
     }
 
-    bool ShouldStartChasing()
+    private void DestroyEnemy()
     {
-        return PlayerInChaseRange() || PlayerInViewRange();
+        Destroy(gameObject);
     }
 
-    void MoveTowards(Vector3 target, float speed)
+    private void OnDrawGizmosSelected()
     {
-        Vector3 dir = (target - transform.position).normalized;
-        transform.position += dir * speed * Time.deltaTime;
-        transform.LookAt(target);
-    }
-
-    // -------- GIZMOS -------- //
-    void OnDrawGizmosSelected()
-    {
-        // Chase / Awareness Radius
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, chaseDistance);
-
-        // Vision Range
-        Gizmos.color = Color.cyan;
-        //Gizmos.DrawWireSphere(transform.position, viewDistance);
-
-        Vector3 left = Quaternion.Euler(0, -viewAngle / 2f, 0) * transform.forward;
-        Vector3 right = Quaternion.Euler(0, viewAngle / 2f, 0) * transform.forward;
-
-        Gizmos.DrawLine(transform.position, transform.position + left * viewDistance);
-        Gizmos.DrawLine(transform.position, transform.position + right * viewDistance);
-
-        // Attack Range
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackDistance);
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, sightRange);
     }
-
 }

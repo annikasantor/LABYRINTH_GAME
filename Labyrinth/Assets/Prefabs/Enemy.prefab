@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 7772755871170129233}
   - component: {fileID: 4052145474727956000}
   - component: {fileID: 1664418314854024180}
-  - component: {fileID: 6234438014413096041}
   - component: {fileID: 7607280195468139309}
+  - component: {fileID: 3345787457457600427}
+  - component: {fileID: 2909535257407031083}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -30,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 8906431066420046408}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.95, y: 1.3, z: 0}
+  m_LocalPosition: {x: -74.57402, y: 1.43, z: -15.46867}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -116,23 +117,6 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &6234438014413096041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8906431066420046408}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 060a34b8bd87b4270b9bce005ed97733, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Wandering
-  _speed: 5
-  _obstacleRange: 5
-  _sphereRadius: 0.75
-  _projectilePrefab: {fileID: 1260085782518665231, guid: 598f3931bb3684b57b00140230dbcbd9, type: 3}
-  Projectile: {fileID: 0}
 --- !u!114 &7607280195468139309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,3 +130,54 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ReactiveTarget
   _defeatAnimTime: 1.5
+--- !u!114 &3345787457457600427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8906431066420046408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c088bddb276fd4374a8471db020ac0e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
+  agent: {fileID: 2909535257407031083}
+  player: {fileID: 0}
+  health: 5
+  whatIsGround:
+    serializedVersion: 2
+    m_Bits: 8
+  whatIsPlayer:
+    serializedVersion: 2
+    m_Bits: 64
+  walkPoint: {x: 0, y: 0, z: 0}
+  walkPointRange: 5
+  timeBetweenAttacks: 0.5
+  projectile: {fileID: 1260085782518665231, guid: 598f3931bb3684b57b00140230dbcbd9, type: 3}
+  sightRange: 20
+  attackRange: 12
+  playerInSightRange: 0
+  playerInAttackRange: 0
+--- !u!195 &2909535257407031083
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8906431066420046408}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5000001
+  m_Speed: 11
+  m_Acceleration: 12
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 1.5
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
